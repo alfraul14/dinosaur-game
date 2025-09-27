@@ -16,6 +16,7 @@
     "vite": "^6.3.1"
   },
   "dependencies": {
+    "normalize.css": "^8.0.1",
     "phaser": "3.60"
   }
 }
