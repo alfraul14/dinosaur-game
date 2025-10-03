@@ -3,6 +3,10 @@ import { PreloadScene } from './scenes/PreloadScene'
 import './style.css'
 import Phaser, { Game } from 'phaser'
 
+export const PRELOAD_CONFIG = {
+  cactusesCount: 6,
+  birdsCount: 1
+}
 export const MyScenes = {
   PreloadScene: { id: 1, name: 'PreloadScene', Class: PreloadScene },
   MainScene: { id: 2, name: 'MainScene', Class: MainScene }
