@@ -7,12 +7,20 @@ import { MY_RESOURCES, ObstacleKey } from './PreloadScene'
 
 const DEFAULT_SPEED = 5
 const DEFAULT_SPAWN_TIME = 0
+const DEFAULT_SCORE = 0
+const DEFAULT_DEFAULT_TIME = 0
 export class MainScene extends GameScene {
   protected player!: Player
   protected ground!: Phaser.GameObjects.TileSprite
   protected obstacles!: Phaser.Physics.Arcade.Group
-  protected clouds!: Phaser.Physics.Arcade.Group
+  protected clouds!: Phaser.GameObjects.Group
   protected startTrigger!: SpriteWithDynamicBody
+  protected scoreText!: Phaser.GameObjects.Text
+
+  private score: number = 0
+  private readonly scoreInterval: number = 100
+  private scoreDeltaTime: number = 0
+
   private spawnTime = DEFAULT_SPAWN_TIME
   private readonly spawnInterval = 1500
   private gameSpeed = DEFAULT_SPEED
@@ -33,6 +41,7 @@ export class MainScene extends GameScene {
     this.handleObstacleCollision()
     this.handleGameRestart()
     this.createAnimations()
+    this.createScore()
   }
 
   handleGameRestart (): void {
@@ -55,6 +64,8 @@ export class MainScene extends GameScene {
       this.gameOvertContainer.setAlpha(1)
       this.spawnTime = DEFAULT_SPAWN_TIME
       this.gameSpeed = DEFAULT_SPEED
+      this.scoreDeltaTime = DEFAULT_DEFAULT_TIME
+      this.score = DEFAULT_SCORE
     })
   }
 
@@ -81,6 +92,8 @@ export class MainScene extends GameScene {
             rollOutEvent.remove()
             this.ground.width = this.gameWidth()
             this.player.setVelocityX(0)
+            this.clouds.setAlpha(1)
+            this.scoreText.setAlpha(1)
             this.isGameRunning = true
           }
         }
@@ -101,18 +114,35 @@ export class MainScene extends GameScene {
     this.obstacles = this.physics.add.group()
   }
 
-  update (time: number, delta: number): void {
+  update (_time: number, delta: number): void {
     if (!this.isGameRunning) { return }
     this.spawnTime += delta
+    this.scoreDeltaTime += delta
+    if (this.scoreDeltaTime >= this.scoreInterval) {
+      this.score++
+      console.log(this.score)
+      this.scoreDeltaTime = 0
+    }
     if (this.spawnTime >= this.spawnInterval) {
       this.spawnObstacle()
       this.spawnTime = 0
     }
     Phaser.Actions.IncX(this.obstacles.getChildren(), -this.gameSpeed)
+    Phaser.Actions.IncX(this.clouds.getChildren(), -0.5)
+    const score = String(this.score).padStart(5, '0')
+    this.scoreText.setText(score)
+
     this.obstacles.getChildren().forEach((obstacle) => {
       if (obstacle instanceof Phaser.Physics.Arcade.Sprite) {
         if (obstacle.getBounds().right < 0) {
           this.obstacles.remove(obstacle)
+        }
+      }
+    })
+    this.clouds.getChildren().forEach((cloud) => {
+      if (cloud instanceof Phaser.Physics.Arcade.Sprite) {
+        if (cloud.getBounds().right < 0) {
+          cloud.x = this.gameWidth() + 30
         }
       }
     })
@@ -123,13 +153,23 @@ export class MainScene extends GameScene {
     this.player = new Player(this, 0, this.gameHeight())
   }
 
+  createScore (): void {
+    this.scoreText = this.add.text(this.gameWidth(), 0, '00000', {
+      fontSize: 30,
+      fontFamily: 'Arial',
+      color: '#535353',
+      resolution: 5
+    }).setOrigin(1, 0).setAlpha(0)
+  }
+
   createEnvironment (): void {
     this.ground = this.add.tileSprite(0, this.gameHeight(), 88, 26, 'ground').setOrigin(0, 1)
+    this.clouds = this.add.group()
     this.clouds = this.clouds.addMultiple([
       this.add.image(this.gameWidth() / 2, 170, MY_RESOURCES.cloud.id),
       this.add.image(this.gameWidth() - 80, 80, MY_RESOURCES.cloud.id),
       this.add.image(this.gameWidth() / 1.3, 100, MY_RESOURCES.cloud.id)
-    ])
+    ]).setAlpha(0)
   }
 
   createAnimations (): void {
